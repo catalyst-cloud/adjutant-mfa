@@ -1,0 +1,36 @@
+{% extends "horizon/common/_modal_form.html" %}
+{% load i18n %}
+
+{% block modal-body %}
+<div class="row">
+  <div class="col-sm-6">
+    <!-- Printing out qr code & explanation here -->
+    <label class="control-label">Your MFA Credential Barcode: </label>
+    {% if form.provisioning_url.help_text %}
+      <span class="help-icon" data-toggle="tooltip" data-placement="top" title="{{ form.provisioning_url.help_text|safe }}"><span class="fa fa-question-circle"></span></span>
+    {% endif %}
+
+    <div class="center-block text-center">
+      <div id="qrcode" class="img-thumbnail" width=200></div>
+    </div>
+    <script src='{{ STATIC_URL }}/dashboard/settings/adjutant-ui/mfa/qrcode/qrcode.min.js' type='text/javascript' charset='utf-8'></script>
+
+    <script type="text/javascript">
+    new QRCode(document.getElementById("qrcode"), {
+    	text: "{{ form.provisioning_url.value|safe }}",
+    	width: 200,
+    	height: 200,
+    	correctLevel : QRCode.CorrectLevel.H
+    });
+    </script>
+
+    {% include "horizon/common/_form_fields.html" %}
+  </div>
+  <div class="col-sm-6">
+    <h3>{% trans "Description:" %}</h3>
+    <p>{% trans "Multifactor authentication protects your account by ensuring that any attacker will need access to more than just your password."%} </p>
+    <p>{% trans "Scan the QR code to your left with an application such as Google Authenticator or Authy. Then type in the generated passcode to confirm the addition of 2 Factor Authenitcation to your account."%} </p>
+    <p>{% trans "You will not be able to review this QR code or login without two factor authentication after this has been submitted. However, this protection can be removed at from this page by confirming your current passcode." %}</p>
+  </div>
+</div>
+{% endblock %}
