@@ -1,4 +1,5 @@
 {% overextends 'auth/_login_page.html' %}
+{% load i18n %}
 
 {% block login_body %}
   {# Add in additional login field and JS required to allow users to place their passcode in and append it to the password #}
@@ -20,7 +21,6 @@
           <input type="text" name="totp_passcode" data-switch-on="mfa_enabled" data-source-manual="TOTP Passcode" class="switched form-control" id="id_passcode" />
     </div>
   </div>
-</fieldset>
 
   <script>
       function togglePasscodeField(){
@@ -50,4 +50,12 @@
           form.addEventListener("submit", processForm);
       }
   </script>
+{% endblock %}
+
+
+{% block login_footer %}
+  <button id="loginBtn" type="submit" class="btn btn-primary pull-right">
+    <span>{% trans "Sign In" %}</span>
+  </button>
+  <div class="clearfix"></div>
 {% endblock %}
