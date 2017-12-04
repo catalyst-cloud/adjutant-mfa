@@ -61,7 +61,7 @@ class MfaAPITests(APITestCase):
                                       format='json', headers=headers)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         token = response.data.get('token_id')
-        self.assertNotEquals(token, None)
+        self.assertNotEqual(token, None)
 
         code = generate_totp_passcode(cred.blob)
 
@@ -97,13 +97,13 @@ class MfaAPITests(APITestCase):
         provisoning_uri = response.data.get('otpauth')
         token = response.data.get('token_id')
 
-        self.assertNotEquals(provisoning_uri, None)
+        self.assertNotEqual(provisoning_uri, None)
 
         secret = urlparse.parse_qs(
             urlparse.urlsplit(provisoning_uri).query).get('secret')[0]
-        self.assertEquals(secret,
-                          user.credentials.get('totp-draft')[0].blob)
-        self.assertNotEquals(token, None)
+        self.assertEqual(secret,
+                         user.credentials.get('totp-draft')[0].blob)
+        self.assertNotEqual(token, None)
 
         code = generate_totp_passcode(secret)
         url = "/v1/tokens/" + token

@@ -12,17 +12,18 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import mock
 import base64
+import mock
 import os
 
 
-from mfa_actions.models import EditMFAAction
 from adjutant.api.models import Task
 from adjutant.common.tests.fake_clients import (FakeManager,
                                                 setup_identity_cache)
 from adjutant.common.tests import fake_clients
 from adjutant.common.tests.utils import AdjutantTestCase
+
+from mfa_actions.models import EditMFAAction
 from mfa_actions.utils import generate_totp_passcode
 
 
@@ -59,22 +60,22 @@ class MFAActionTests(AdjutantTestCase):
         action = EditMFAAction(data, task=task, order=1)
 
         action.pre_approve()
-        self.assertEquals(action.valid, True)
+        self.assertEqual(action.valid, True)
 
         action.post_approve()
-        self.assertEquals(action.valid, True)
+        self.assertEqual(action.valid, True)
 
-        self.assertEquals(len(user.credentials['totp-draft']), 1)
+        self.assertEqual(len(user.credentials['totp-draft']), 1)
 
         secret = user.credentials['totp-draft'][0].blob
 
         passcode = generate_totp_passcode(secret)
         token_data = {'passcode': passcode}
         action.submit(token_data)
-        self.assertEquals(action.valid, True)
+        self.assertEqual(action.valid, True)
 
-        self.assertEquals(len(user.credentials['totp']), 1)
-        self.assertEquals(len(user.credentials['totp-draft']), 0)
+        self.assertEqual(len(user.credentials['totp']), 1)
+        self.assertEqual(len(user.credentials['totp-draft']), 0)
 
     def test_add_mfa_draft_removed(self):
         """
@@ -105,12 +106,12 @@ class MFAActionTests(AdjutantTestCase):
         action = EditMFAAction(data, task=task, order=1)
 
         action.pre_approve()
-        self.assertEquals(action.valid, True)
+        self.assertEqual(action.valid, True)
 
         action.post_approve()
-        self.assertEquals(action.valid, True)
+        self.assertEqual(action.valid, True)
 
-        self.assertEquals(len(user.credentials['totp-draft']), 1)
+        self.assertEqual(len(user.credentials['totp-draft']), 1)
 
         secret = user.credentials['totp-draft'][0].blob
         user.credentials['totp-draft'] = []
@@ -118,10 +119,10 @@ class MFAActionTests(AdjutantTestCase):
         passcode = generate_totp_passcode(secret)
         token_data = {'passcode': passcode}
         return_data = action.submit(token_data)
-        self.assertEquals(action.valid, False)
+        self.assertEqual(action.valid, False)
 
-        self.assertEquals(return_data.get('errors'), 'TOTP Secret Removed')
-        self.assertEquals(len(user.credentials['totp-draft']), 0)
+        self.assertEqual(return_data.get('errors'), 'TOTP Secret Removed')
+        self.assertEqual(len(user.credentials['totp-draft']), 0)
 
     def test_add_mfa_incorrect_passcode(self):
 
@@ -148,21 +149,21 @@ class MFAActionTests(AdjutantTestCase):
         action = EditMFAAction(data, task=task, order=1)
 
         action.pre_approve()
-        self.assertEquals(action.valid, True)
+        self.assertEqual(action.valid, True)
 
         action.post_approve()
-        self.assertEquals(action.valid, True)
+        self.assertEqual(action.valid, True)
 
-        self.assertEquals(len(user.credentials['totp-draft']), 1)
+        self.assertEqual(len(user.credentials['totp-draft']), 1)
 
         passcode = generate_totp_passcode(
             base64.b32encode(os.urandom(20)).decode('utf-8'))
         token_data = {'passcode': passcode}
         action.submit(token_data)
-        self.assertEquals(action.valid, False)
+        self.assertEqual(action.valid, False)
 
         # Should not have updated the credentials
-        self.assertEquals(len(user.credentials.get('totp', [])), 0)
+        self.assertEqual(len(user.credentials.get('totp', [])), 0)
 
     def test_remove_mfa(self):
         """
@@ -195,17 +196,17 @@ class MFAActionTests(AdjutantTestCase):
         action = EditMFAAction(data, task=task, order=1)
 
         action.pre_approve()
-        self.assertEquals(action.valid, True)
+        self.assertEqual(action.valid, True)
 
         action.post_approve()
-        self.assertEquals(action.valid, True)
+        self.assertEqual(action.valid, True)
 
-        self.assertEquals(len(user.credentials.get('totp-draft', [])), 0)
-        self.assertEquals(len(user.credentials['totp']), 1)
+        self.assertEqual(len(user.credentials.get('totp-draft', [])), 0)
+        self.assertEqual(len(user.credentials['totp']), 1)
 
         token_data = {'passcode': generate_totp_passcode(cred.blob)}
         action.submit(token_data)
-        self.assertEquals(action.valid, True)
+        self.assertEqual(action.valid, True)
 
-        self.assertEquals(len(user.credentials.get('totp', [])), 0)
-        self.assertEquals(len(user.credentials.get('totp-draft', [])), 0)
+        self.assertEqual(len(user.credentials.get('totp', [])), 0)
+        self.assertEqual(len(user.credentials.get('totp-draft', [])), 0)
