@@ -22,15 +22,40 @@
     	height: 200,
     	correctLevel : QRCode.CorrectLevel.H
     });
+
+    var provisioning_url = "{{ form.provisioning_url.value|safe }}";
+
+    function toggleAdditionalDetails(){
+      var additional_details = document.getElementById("id_additional_totp_details");
+      if (additional_details.hidden){
+        additional_details.hidden = false;
+      } else {
+        additional_details.hidden = true;
+      }
+    }
     </script>
 
     {% include "horizon/common/_form_fields.html" %}
+    <a href="#" id="id_additional_details_toggle" onclick="toggleAdditionalDetails()"  title="If you cannot scan the QR code click here for the full details to enter into your MFA application.">View All Details</a>
+    <span class="help-icon" data-toggle="tooltip" data-placement="top" title="If you cannot scan the QR code click here for the full details to enter into your MFA application."><span class="fa fa-question-circle"></span></span>
+    <dl class="dl-horizontal" id="id_additional_totp_details" hidden="true">
+        <dt>Secret:</dt> <dd>{{ form.details.value.secret.0 }}</dd>
+        <dt>Type:</dt> <dd>TOTP</dd>
+        <dt>Digits:</dt> <dd>{{ form.details.value.digits.0 }}</dd>
+        <dt>Algorithm:</dt> <dd>{{ form.details.value.algorithm.0 }}</dd>
+        <dt>Period:</dt> <dd>{{ form.details.value.period.0 }}</dd>
+    </dl>
+
+
   </div>
   <div class="col-sm-6">
     <h3>{% trans "Description:" %}</h3>
     <p>{% trans "Multifactor authentication protects your account by ensuring that any attacker will need access to more than just your password."%} </p>
     <p>{% trans "Scan the QR code to your left with an application such as Google Authenticator or Authy. Then type in the generated passcode to confirm the addition of 2 Factor Authenitcation to your account."%} </p>
     <p>{% trans "You will not be able to review this QR code or login without two factor authentication after this has been submitted. However, this protection can be removed at from this page by confirming your current passcode." %}</p>
+
+    <p>{% trans "A new openrc file must be downloaded to ensure that you will not have to reauthenticate each time your totp passcode changes. The openrc file will generate a token that allows you to stay authenticated." %}</p>
+
   </div>
 </div>
 {% endblock %}

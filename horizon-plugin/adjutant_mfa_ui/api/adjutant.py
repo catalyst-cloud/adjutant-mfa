@@ -15,7 +15,10 @@
 import json
 import logging
 
-from adjutant_ui.api.adjutant import get, post, delete, token_submit
+from adjutant_ui.api.adjutant import delete
+from adjutant_ui.api.adjutant import get
+from adjutant_ui.api.adjutant import post
+from adjutant_ui.api.adjutant import token_submit
 
 LOG = logging.getLogger(__name__)
 
