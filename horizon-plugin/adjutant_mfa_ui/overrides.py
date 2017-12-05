@@ -12,12 +12,19 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from adjutant_mfa_ui.api import adjutant
+
+from adjutant_ui.content.project_users import tables as user_tables
+from adjutant_ui.content.project_users import views as user_views
+
 from django.core.urlresolvers import reverse_lazy
 from django.utils.translation import ugettext_lazy as _
 
 from openstack_dashboard.dashboards.project.api_access import tables
 from openstack_dashboard.dashboards.project.api_access import views
 
+from horizon import exceptions
+from horizon.tables import Column
 from horizon.tables import LinkAction
 
 
@@ -34,5 +41,31 @@ class MFAEndpointsTable(tables.EndpointsTable):
         table_actions_menu = tables.EndpointsTable.Meta.table_actions_menu \
             + (DownloadOpenRCMFA, )
 
-
 views.IndexView.table_class = MFAEndpointsTable
+
+
+class MFAUserTable(user_tables.UsersTable):
+    has_mfa = Column('has_mfa', verbose_name=_('MFA Enabled'))
+
+    class Meta(object):
+        name = 'users'
+        row_class = user_tables.UpdateUserRow
+        verbose_name = _('Users')
+        columns = ('id', 'name', 'email', 'roles', 'inherited_roles', 'status',
+                   'cohort', 'has_mfa')
+        table_actions = (user_tables.CohortFilter, user_tables.InviteUser,
+                         user_tables.RevokeUser)
+        row_actions = (user_tables.UpdateUser, user_tables.ResendInvitation,
+                       user_tables.RevokeUser)
+        multi_select = True
+
+
+def get_mfa_user_data(self):
+    try:
+        return adjutant.user_list_mfa(self.request)
+    except Exception:
+        exceptions.handle(self.request, _('Failed to list users.'))
+        return []
+
+user_views.UsersView.table_class = MFAUserTable
+user_views.UsersView.get_data = get_mfa_user_data
