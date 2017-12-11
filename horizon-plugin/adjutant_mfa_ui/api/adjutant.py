@@ -84,7 +84,7 @@ def user_list_mfa(request):
                     inherited_roles=user['inherited_roles'],
                     status=user['status'],
                     cohort=user['cohort'],
-                    has_mfa=user['has_mfa'],
+                    has_mfa=user.get('has_mfa', ''),
                 )
             )
     except Exception as e:
