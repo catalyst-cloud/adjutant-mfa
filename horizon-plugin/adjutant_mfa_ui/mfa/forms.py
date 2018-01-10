@@ -29,11 +29,7 @@ from adjutant_mfa_ui.api import adjutant
 class AddMFAForm(forms.SelfHandlingForm):
     token_id = forms.Field()
     token_id.widget = forms.HiddenInput()
-
-    secret = forms.CharField(label=_('Your Secret'),
-                             help_text=_("If you can't use a barcode "
-                                         "enter in this code instead."))
-    secret.widget.attrs['readonly'] = True
+    details = forms.Field(widget=forms.HiddenInput())
 
     provisioning_url = forms.Field(widget=forms.HiddenInput(),
                                    help_text=_(
@@ -59,12 +55,11 @@ class AddMFAForm(forms.SelfHandlingForm):
                     utils.add_logout_reason(request, response, msg)
                     return response
                 else:
-                    print(submit_response.content)
                     messages.error(request,
                                    _('Unable to setup MFA. Your passcode '
                                      'may be incorrect.'))
                     return False
-            except Exception:  # Exception:
+            except Exception:
                 exceptions.handle(request,
                                   _('Unable to setup MFA.'))
                 return False

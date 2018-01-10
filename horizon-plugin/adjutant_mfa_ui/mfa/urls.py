@@ -17,4 +17,7 @@ from django.conf.urls import url
 from adjutant_mfa_ui.mfa import views
 
 
-urlpatterns = [url(r'^$', views.update_mfa_router, name='index')]
+urlpatterns = [
+    url(r'^$', views.update_mfa_router, name='index'),
+    url(r'^openrc/$', views.download_rc_file_mfa, name='openrc')
+]

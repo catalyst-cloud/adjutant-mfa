@@ -21,3 +21,9 @@ And to TASK_SETTINGS add:
     edit_mfa:
         duplicate_policy: cancel
         token: null
+
+Additionally add a COMPANY_NAME setting to show up on the TOTP provisioning
+uris.
+.. code-block:: yaml
+
+  COMPANY_NAME: OpenStack
