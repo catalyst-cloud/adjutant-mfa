@@ -86,9 +86,10 @@ class EditMFAAction(UserIdAction, ProjectMixin, UserMixin):
 
         id_manager = user_store.IdentityManager()
         if self.delete:
-            secret = id_manager.get_credential_blob(self.user_id, 'totp')
+            secret = self.get_credential_blob()
 
             if not secret:
+                # TOTP already removed
                 return
 
             if self.validate_passcode(token_data.get('passcode')):
@@ -101,7 +102,7 @@ class EditMFAAction(UserIdAction, ProjectMixin, UserMixin):
 
                 return {'errors': 'Invalid TOTP passcode'}
         else:
-            secret = id_manager.get_credential_blob(self.user_id, 'totp-draft')
+            secret = self.get_credential_blob()
 
             if not secret:
                 self.action.valid = False
@@ -120,10 +121,22 @@ class EditMFAAction(UserIdAction, ProjectMixin, UserMixin):
                 self.action.valid = False
                 return {'errors': 'Invalid TOTP passcode'}
 
-    def validate_passcode(self, passcode):
+    def get_credential_blob(self):
         id_manager = user_store.IdentityManager()
         cred_type = 'totp' if self.delete else 'totp-draft'
-        secret = id_manager.get_credential_blob(self.user_id, cred_type)
+        credentials = id_manager.list_credentials(self.user_id, cred_type)
+
+        if len(credentials) < 1:
+            self.add_note("No Credentials found.")
+            return False
+        elif len(credentials) > 1:
+            self.add_note("More than one credential found.")
+            return False
+
+        return credentials[0].blob
+
+    def validate_passcode(self, passcode):
+        secret = self.get_credential_blob()
 
         if not passcode or not secret:
             return False

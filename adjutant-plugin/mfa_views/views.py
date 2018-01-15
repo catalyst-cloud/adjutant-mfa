@@ -75,8 +75,12 @@ class EditMFA(TaskView):
 
     def get_provisioning_uri(self, user_id, cred_type='totp-draft'):
         id_manager = user_store.IdentityManager()
-        secret = id_manager.get_credential_blob(user_id,
-                                                'totp-draft')
+        creds = id_manager.list_credentials(user_id, cred_type)
+
+        # NOTE(amelia): There will only be one as the action checks for
+        #               other cases and makrs them invalid
+        secret = creds[0].blob
+
         user_name = id_manager.get_user(user_id).name
 
         if isinstance(secret, six.text_type):

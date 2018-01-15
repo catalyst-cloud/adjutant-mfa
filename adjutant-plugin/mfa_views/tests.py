@@ -38,14 +38,14 @@ class MfaAPITests(APITestCase):
         Create task + create token, submit token.
         """
 
-        cred = fake_clients.FakeCredential(
-            blob=base64.b32encode(os.urandom(20)).decode('utf-8'),
-            cred_type='totp')
         user = fake_clients.FakeUser(
             name="test@example.com", password="test_password",
-            email="test@example.com", credentials={'totp': [cred]})
+            email="test@example.com")
+        cred = fake_clients.FakeCredential(
+            user_id=user.id, cred_type='totp',
+            blob=base64.b32encode(os.urandom(20)).decode('utf-8'))
 
-        setup_identity_cache(users=[user])
+        setup_identity_cache(users=[user], credentials=[cred])
 
         headers = {
             'project_name': "test_project",
@@ -101,8 +101,10 @@ class MfaAPITests(APITestCase):
 
         secret = urlparse.parse_qs(
             urlparse.urlsplit(provisoning_uri).query).get('secret')[0]
-        self.assertEqual(secret,
-                         user.credentials.get('totp-draft')[0].blob)
+
+        manager = FakeManager()
+        creds = manager.list_credentials(user.id, 'totp-draft')
+        self.assertEqual(secret, creds[0].blob)
         self.assertNotEqual(token, None)
 
         code = generate_totp_passcode(secret)

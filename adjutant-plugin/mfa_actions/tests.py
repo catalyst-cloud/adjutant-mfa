@@ -65,17 +65,21 @@ class MFAActionTests(AdjutantTestCase):
         action.post_approve()
         self.assertEqual(action.valid, True)
 
-        self.assertEqual(len(user.credentials['totp-draft']), 1)
+        manager = FakeManager()
 
-        secret = user.credentials['totp-draft'][0].blob
+        user_cred = manager.list_credentials
+
+        self.assertEqual(len(user_cred(user.id, 'totp-draft')), 1)
+
+        secret = user_cred(user.id, 'totp-draft')[0].blob
 
         passcode = generate_totp_passcode(secret)
         token_data = {'passcode': passcode}
         action.submit(token_data)
         self.assertEqual(action.valid, True)
 
-        self.assertEqual(len(user.credentials['totp']), 1)
-        self.assertEqual(len(user.credentials['totp-draft']), 0)
+        self.assertEqual(len(user_cred(user.id, 'totp')), 1)
+        self.assertEqual(len(user_cred(user.id, 'totp-draft')), 0)
 
     def test_add_mfa_draft_removed(self):
         """
@@ -111,10 +115,14 @@ class MFAActionTests(AdjutantTestCase):
         action.post_approve()
         self.assertEqual(action.valid, True)
 
-        self.assertEqual(len(user.credentials['totp-draft']), 1)
+        manager = FakeManager()
 
-        secret = user.credentials['totp-draft'][0].blob
-        user.credentials['totp-draft'] = []
+        user_draft = manager.list_credentials(
+            user_id=user.id, cred_type='totp-draft')
+        self.assertEqual(len(user_draft), 1)
+
+        secret = user_draft[0].blob
+        manager.clear_credential_type(user_id=user.id, cred_type='totp-draft')
 
         passcode = generate_totp_passcode(secret)
         token_data = {'passcode': passcode}
@@ -122,7 +130,9 @@ class MFAActionTests(AdjutantTestCase):
         self.assertEqual(action.valid, False)
 
         self.assertEqual(return_data.get('errors'), 'TOTP Secret Removed')
-        self.assertEqual(len(user.credentials['totp-draft']), 0)
+        user_draft = manager.list_credentials(
+            user_id=user.id, cred_type='totp-draft')
+        self.assertEqual(len(user_draft), 0)
 
     def test_add_mfa_incorrect_passcode(self):
 
@@ -154,7 +164,11 @@ class MFAActionTests(AdjutantTestCase):
         action.post_approve()
         self.assertEqual(action.valid, True)
 
-        self.assertEqual(len(user.credentials['totp-draft']), 1)
+        manager = FakeManager()
+
+        user_draft = manager.list_credentials(
+            user_id=user.id, cred_type='totp-draft')
+        self.assertEqual(len(user_draft), 1)
 
         passcode = generate_totp_passcode(
             base64.b32encode(os.urandom(20)).decode('utf-8'))
@@ -163,21 +177,27 @@ class MFAActionTests(AdjutantTestCase):
         self.assertEqual(action.valid, False)
 
         # Should not have updated the credentials
-        self.assertEqual(len(user.credentials.get('totp', [])), 0)
+        user_totp = manager.list_credentials(user_id=user.id, cred_type='totp')
+        self.assertEqual(len(user_totp), 0)
+
+        user_draft = manager.list_credentials(
+            user_id=user.id, cred_type='totp-draft')
+        self.assertEqual(len(user_draft), 1)
 
     def test_remove_mfa(self):
         """
         Existing user, valid tenant, correct passcode, mfa setup
         """
 
-        cred = fake_clients.FakeCredential(
-            blob=base64.b32encode(os.urandom(20)).decode('utf-8'),
-            cred_type='totp')
         user = fake_clients.FakeUser(
             name="test@example.com", password="test_password",
-            email="test@example.com", credentials={'totp': [cred]})
+            email="test@example.com")
 
-        setup_identity_cache(users=[user])
+        cred = fake_clients.FakeCredential(
+            blob=base64.b32encode(os.urandom(20)).decode('utf-8'),
+            cred_type='totp', user_id=user.id)
+
+        setup_identity_cache(users=[user], credentials=[cred])
 
         task = Task.objects.create(
             ip_address="0.0.0.0",
@@ -201,12 +221,15 @@ class MFAActionTests(AdjutantTestCase):
         action.post_approve()
         self.assertEqual(action.valid, True)
 
-        self.assertEqual(len(user.credentials.get('totp-draft', [])), 0)
-        self.assertEqual(len(user.credentials['totp']), 1)
-
         token_data = {'passcode': generate_totp_passcode(cred.blob)}
         action.submit(token_data)
         self.assertEqual(action.valid, True)
 
-        self.assertEqual(len(user.credentials.get('totp', [])), 0)
-        self.assertEqual(len(user.credentials.get('totp-draft', [])), 0)
+        manager = FakeManager()
+        # Check for no creds
+        user_totp = manager.list_credentials(user_id=user.id, cred_type='totp')
+        self.assertEqual(len(user_totp), 0)
+
+        user_draft = manager.list_credentials(
+            user_id=user.id, cred_type='totp-draft')
+        self.assertEqual(len(user_draft), 0)
