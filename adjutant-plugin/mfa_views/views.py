@@ -128,15 +128,6 @@ class UserListMFA(UserList):
 
     @utils.mod_or_admin
     def get(self, request):
-        # TODO(amelia): Pick more finetuned way of dealing with this
-        #               while we only want users who have persmissions
-        #               to find users this way we also dont want to be
-        #               making a million requests for this to keystone
-        #               either.
-        #               It may be faster to get all TOTP keystone
-        #               credentials and to sort through them to get
-        #               the relevant ones.
-
         response = super(UserListMFA, self).get(request)
         id_manager = user_store.IdentityManager()
         credentials = id_manager.list_credentials(None, 'totp')
