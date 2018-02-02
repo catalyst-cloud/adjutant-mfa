@@ -18,6 +18,7 @@ from adjutant_ui.content.project_users import tables as user_tables
 from adjutant_ui.content.project_users import views as user_views
 
 from django.core.urlresolvers import reverse_lazy
+from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 
 from openstack_dashboard.dashboards.project.api_access import tables
@@ -67,5 +68,6 @@ def get_mfa_user_data(self):
         exceptions.handle(self.request, _('Failed to list users.'))
         return []
 
-user_views.UsersView.table_class = MFAUserTable
-user_views.UsersView.get_data = get_mfa_user_data
+if getattr(settings, "SHOW_MFA_ENABLED_IN_USER_LIST", False):
+    user_views.UsersView.table_class = MFAUserTable
+    user_views.UsersView.get_data = get_mfa_user_data
