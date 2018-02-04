@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{% trans "MFA Error" %}{% endblock %}
+
+{% block main %}
+    <p>An error has occured while attempting to contact the MFA management service.
+       This outage should not affect any pre-existing MFA credentials.
+    <p>If you continue to see this error please contact an administrator. </p>
+
+{% endblock %}

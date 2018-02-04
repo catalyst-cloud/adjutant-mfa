@@ -20,6 +20,7 @@ from django.utils.translation import ugettext_lazy as _
 
 from horizon import exceptions
 from horizon import forms
+from horizon import views
 from horizon.utils import memoized
 
 from openstack_auth import utils
@@ -34,7 +35,10 @@ LOG = logging.getLogger(__name__)
 
 def update_mfa_router(request, *args, **kwargs):
     """Routes requests to the correct view, based on submission parameters."""
-    user_has_mfa = api.adjutant.user_has_mfa(request)
+    try:
+        user_has_mfa = api.adjutant.user_has_mfa(request)
+    except Exception:
+        return ErrorMFAView.as_view()(request, *args, **kwargs)
 
     if user_has_mfa:
         return RemoveMFAView.as_view()(request, *args, **kwargs)
@@ -106,3 +110,8 @@ class AddMFAView(forms.ModalFormView):
                     'details': details,
                     }
             return data
+
+
+class ErrorMFAView(views.HorizonTemplateView):
+    page_title = _("Cannot access MFA details")
+    template_name = 'settings/mfa/error.html'
