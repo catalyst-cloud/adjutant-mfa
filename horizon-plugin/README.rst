@@ -34,3 +34,10 @@ line into your ``local_settings.py``.
   HORIZON_CONFIG['user_menu_links'].append({
     'name': 'OpenStack RC File v3 (MFA Enabled)',
     'url': 'horizon:settings:mfa:openrc'})
+
+If you would like details of if MFA is enabled to be visible in the user
+list, also place this in your config (customization_module must also be set).
+
+.. code-block:: python
+
+    MFA_ENABLED_IN_USER_LIST = True

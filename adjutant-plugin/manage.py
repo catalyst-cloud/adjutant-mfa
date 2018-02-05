@@ -7,6 +7,9 @@ test_settings.ADDITIONAL_APPS.append("mfa_actions")
 test_settings.ADDITIONAL_APPS.append("mfa_views")
 
 test_settings.ACTIVE_TASKVIEWS.append("EditMFA")
+test_settings.ACTIVE_TASKVIEWS.append("UserListMFA")
+test_settings.ACTIVE_TASKVIEWS.remove("UserList")
+
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "adjutant.settings")
 

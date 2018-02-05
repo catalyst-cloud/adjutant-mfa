@@ -13,16 +13,20 @@
 #    under the License.
 
 from rest_framework.response import Response
-from adjutant.common import user_store
-from django.utils import timezone
-from adjutant.api import utils
-from adjutant.api.v1.utils import add_task_id_for_roles
-from adjutant.api.v1.tasks import TaskView
+
+
 from adjutant.api.models import Token
+from adjutant.api import utils
+from adjutant.api.v1.openstack import UserList
+from adjutant.api.v1.tasks import TaskView
+from adjutant.api.v1.utils import add_task_id_for_roles
+from adjutant.common import user_store
+
+from django.utils import timezone
 
 from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives.twofactor.totp import TOTP
 from cryptography.hazmat.primitives.hashes import SHA1
+from cryptography.hazmat.primitives.twofactor.totp import TOTP
 
 import base64
 from django.conf import settings
@@ -121,3 +125,27 @@ class EditMFA(TaskView):
         add_task_id_for_roles(request, processed, response_dict, ['admin'])
 
         return Response(response_dict, status=status)
+
+
+class UserListMFA(UserList):
+    """Overrides User list to include an additional has_mfa field"""
+
+    @utils.mod_or_admin
+    def get(self, request):
+        response = super(UserListMFA, self).get(request)
+        id_manager = user_store.IdentityManager()
+        credentials = id_manager.list_credentials(None, 'totp')
+        credential_dict = {}
+
+        for credential in credentials:
+            credential_dict[credential.user_id] = True
+
+        for user in response.data['users']:
+            if user.get('status') != 'Active':
+                user['has_mfa'] = 'N/A'
+            elif user.get('cohort') != 'Inherited':
+                user['has_mfa'] = credential_dict.get(user['id'], False)
+            else:
+                user['has_mfa'] = ''
+
+        return response

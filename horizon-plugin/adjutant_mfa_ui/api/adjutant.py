@@ -20,7 +20,13 @@ from adjutant_ui.api.adjutant import get
 from adjutant_ui.api.adjutant import post
 from adjutant_ui.api.adjutant import token_submit
 
+import collections
+
 LOG = logging.getLogger(__name__)
+
+USER = collections.namedtuple('User',
+                              ['id', 'name', 'email', 'has_mfa',
+                               'roles', 'inherited_roles', 'cohort', 'status'])
 
 
 def user_has_mfa(request):
@@ -51,3 +57,37 @@ def remove_user_mfa(request, passcode):
     token = initail_response.json()['token_id']
 
     return token_submit(request, token, {'passcode': passcode})
+
+
+def user_list_mfa(request):
+    users = []
+    try:
+        headers = {'Content-Type': 'application/json',
+                   'X-Auth-Token': request.user.token.id}
+        resp = json.loads(get(request, 'openstack/users',
+                              headers=headers).content)
+
+        for user in resp['users']:
+            # NOTE(adriant): Horizon doesn't like two objects with the
+            # same id, so we make the id different since the 'Inherited'
+            # cohort here will never need to be referenced by id.
+            if user['cohort'] == "Inherited":
+                user_id = user['id'] + user['cohort']
+            else:
+                user_id = user['id']
+            users.append(
+                USER(
+                    id=user_id,
+                    name=user['name'],
+                    email=user['email'],
+                    roles=user['roles'],
+                    inherited_roles=user['inherited_roles'],
+                    status=user['status'],
+                    cohort=user['cohort'],
+                    has_mfa=user.get('has_mfa', ''),
+                )
+            )
+    except Exception as e:
+        LOG.error(e)
+        raise
+    return users
