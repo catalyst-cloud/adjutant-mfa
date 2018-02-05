@@ -78,6 +78,8 @@ class EditMFA(TaskView):
         return Response(response_dict, status=status)
 
     def get_provisioning_uri(self, user_id, cred_type='totp-draft'):
+        class_conf = settings.TASK_SETTINGS.get(self.task_type, {})
+
         id_manager = user_store.IdentityManager()
         creds = id_manager.list_credentials(user_id, cred_type)
 
@@ -96,11 +98,9 @@ class EditMFA(TaskView):
         decoded = base64.b32decode(secret)
 
         totp = TOTP(decoded, 6, SHA1(), 30, backend=default_backend())
-        try:
-            company_name = settings.COMPANY_NAME
-        except AttributeError:
-            company_name = ""
-        return totp.get_provisioning_uri(user_name, company_name)
+
+        cloud_name = class_conf.get('cloud_name')
+        return totp.get_provisioning_uri(user_name, cloud_name)
 
     @utils.authenticated
     def delete(self, request, format=None):
