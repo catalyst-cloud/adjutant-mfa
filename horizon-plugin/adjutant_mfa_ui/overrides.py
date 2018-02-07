@@ -42,6 +42,7 @@ class MFAEndpointsTable(tables.EndpointsTable):
         table_actions_menu = tables.EndpointsTable.Meta.table_actions_menu \
             + (DownloadOpenRCMFA, )
 
+
 views.IndexView.table_class = MFAEndpointsTable
 
 
@@ -67,6 +68,7 @@ def get_mfa_user_data(self):
     except Exception:
         exceptions.handle(self.request, _('Failed to list users.'))
         return []
+
 
 if getattr(settings, "SHOW_MFA_ENABLED_IN_USER_LIST", False):
     user_views.UsersView.table_class = MFAUserTable

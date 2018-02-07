@@ -49,12 +49,12 @@ def remove_user_mfa(request, passcode):
     headers = {"Content-Type": "application/json",
                'X-Auth-Token': request.user.token.id}
 
-    initail_response = delete(request, 'openstack/edit-mfa',
+    initial_response = delete(request, 'openstack/edit-mfa',
                               data=json.dumps({}), headers=headers)
 
-    if initail_response.status_code != 200:
-        return initail_response
-    token = initail_response.json()['token_id']
+    if initial_response.status_code != 200:
+        return initial_response
+    token = initial_response.json()['token_id']
 
     return token_submit(request, token, {'passcode': passcode})
 
