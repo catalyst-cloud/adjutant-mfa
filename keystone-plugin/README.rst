@@ -2,7 +2,7 @@
 Keystone MFA Plugin
 ===============================
 
-This adds an authenetication plugin to Keystone such that if the user
+This adds an authentication plugin to Keystone such that if the user
 has a 'totp' type credential added to their account it will force them
 to authenticate with both password and a valid TOTP code.
 
@@ -23,27 +23,114 @@ with this command.
   openstack credential create <user_id> <secret> --type totp
 
 The adjutant plugin will allow users to manage their own MFA credentials, and
-includes checkes to prevent users from adding a credenial they do not have
+includes checks to prevent users from adding a credential they do not have
 stored in a generator.
 
-The password-totp plugin requires keystone V3, it will block people from
-using V2, if they have TOTP credentials on them.
+The password-totp plugin requires keystone V3, and it is recommended that you
+disable Keystone v2 if possible, if not, see the section below about how to
+selectively disable v2 for MFA enabled users.
 
-Works as normal password plugin if no TOTP credentials present for user,
-otherwise expects totp passcode appended to the password.
+This plugin works as a normal password plugin if no TOTP credentials are
+present for user, otherwise expects totp passcode appended to the password.
 
 
-Installing in Devstack
-------------------------
+Installation and setup
+----------------------
 
-The current code provided works for Mitaka keystone, but should work with
-only a few modifications for later versions of keystone.
-
-Files should be dropped in as replacements for the same name files in keystone.
-
-In the auth section of the keystone.conf file add:
+To install the plugin into the current python environment:
 
 .. code-block::
-  password = keystone.auth.plugins.password_totp.PasswordTOTP
+
+  python setup.py install
+
+  or (if this ever gets published to pypi)
+
+  pip install keystone-adjutant-mfa
+
+
+Then in the auth section of the keystone.conf file add:
+
+.. code-block::
+
+  password = keystone_mfa.queens.password_totp.PasswordTOTP
 
 Then restart the keystone server.
+
+There is a version of the plugin going back as far as Mitaka, with the Ocata
+version also working for Pike.
+
+
+Disabling Keystone v2 for MFA enabled users
+-------------------------------------------
+
+If you have Keystone v2 enabled, then a user with MFA enabled can easily bypass
+the MFA and authenticate with Keystone v2. V2 does not support MFA, nor will it
+ever.
+
+If you must have Keystone v2 enabled, then your only recourse is to selectively
+edit the v2 code to explicitly deny auth to any users with MFA configured, and
+instruct them to use v3.
+
+Doing this at least is easy and require a couple of small changes to the v2
+auth code.
+
+In ``keystone/token/controllers.py`` you need to first include
+``credential_api`` in the dependencies for the auth class:
+
+This section:
+
+.. code-block:: python
+
+  @dependency.requires('assignment_api', 'catalog_api', 'identity_api',
+                     'resource_api', 'role_api', 'token_provider_api',
+                     'trust_api')
+  class Auth(controller.V2Controller):
+
+Becomes:
+
+.. code-block:: python
+
+  @dependency.requires('assignment_api', 'catalog_api', 'identity_api',
+                     'resource_api', 'role_api', 'token_provider_api',
+                     'trust_api', 'credential_api')
+  class Auth(controller.V2Controller):
+
+Then in the ``_authenticate_local`` function you need to add a check to raise
+an error in the event that a user has MFA enabled:
+
+This section (roughly around line 299):
+
+.. code-block:: python
+
+  try:
+    user_ref = self.identity_api.authenticate(
+        context,
+        user_id=user_id,
+        password=password)
+  except AssertionError as e:
+    raise exception.Unauthorized(e.args[0])
+
+Becomes:
+
+.. code-block:: python
+
+  # NOTE: Block MFA enabled users from authenticating with v2
+  credentials = self.credential_api.list_credentials_for_user(user_id)
+  credentials = [cred for cred in credentials if cred['type'] == 'totp']
+  if credentials:
+    raise exception.Unauthorized("Must authenticate with v3.")
+
+  # now auth normally
+  try:
+    user_ref = self.identity_api.authenticate(
+        context,
+        user_id=user_id,
+        password=password)
+  except AssertionError as e:
+    raise exception.Unauthorized(e.args[0])
+
+**WARNING: Be very careful editing this code, and ensure that you do so in a
+way that won't be rewritten. Ideally as part of your Keystone packaging, or
+better yet disable v2 if you can to avoid this whole mess. You do not want this
+being reverted since if this code isn't there MFA is entirely useless and can
+easily be bypassed by v2 authentication.**

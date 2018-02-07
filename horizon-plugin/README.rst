@@ -27,11 +27,13 @@ page add this line into your ``local_settings.py``.
     HORIZON_CONFIG["customization_module"] = "adjutant_mfa_ui.overrides"
 
 If you would like the edited OpenRC file available on the user menu add this
-line into your ``local_settings.py``.
+into your ``local_settings.py``.
 
 .. code-block:: python
 
-  HORIZON_CONFIG['user_menu_links'].append({
+  from openstack_dashboard.settings import USER_MENU_LINKS
+
+  USER_MENU_LINKS.append({
     'name': 'OpenStack RC File v3 (MFA Enabled)',
     'url': 'horizon:settings:mfa:openrc'})
 

@@ -10,20 +10,20 @@ adjutant into.
 Edit the conf.yaml file to enable this plugin.
 
 To INSTALLED_APPS add:
+
 .. code-block:: yaml
 
     - mfa_actions
     - mfa_views
 
 And to TASK_SETTINGS add:
+
 .. code-block:: yaml
 
     edit_mfa:
+        cloud_name: OpenStack
         duplicate_policy: cancel
         token: null
 
-Additionally add a COMPANY_NAME setting to show up on the TOTP provisioning
-uris.
-.. code-block:: yaml
-
-  COMPANY_NAME: OpenStack
+``cloud_name`` will show up on the TOTP provisioning uris, and in the user's
+authenticator app.
