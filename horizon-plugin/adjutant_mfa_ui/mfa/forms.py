@@ -33,7 +33,7 @@ class AddMFAForm(forms.SelfHandlingForm):
 
     provisioning_url = forms.Field(widget=forms.HiddenInput(),
                                    help_text=_(
-                                   "Scan this barcode with "
+                                   "Scan this qrcode with "
                                    "a compatible 2 factor authentication app "
                                    " on your phone."))
     passcode = forms.CharField(

@@ -16,23 +16,23 @@
     <script src='{{ STATIC_URL }}/dashboard/settings/adjutant-ui/mfa/qrcode/qrcode.min.js' type='text/javascript' charset='utf-8'></script>
 
     <script type="text/javascript">
-    new QRCode(document.getElementById("qrcode"), {
-    	text: "{{ form.provisioning_url.value|safe }}",
-    	width: 200,
-    	height: 200,
-    	correctLevel : QRCode.CorrectLevel.H
-    });
+      new QRCode(document.getElementById("qrcode"), {
+      	text: "{{ form.provisioning_url.value|safe }}",
+      	width: 200,
+      	height: 200,
+      	correctLevel : QRCode.CorrectLevel.H
+      });
 
-    var provisioning_url = "{{ form.provisioning_url.value|safe }}";
+      var provisioning_url = "{{ form.provisioning_url.value|safe }}";
 
-    function toggleAdditionalDetails(){
-      var additional_details = document.getElementById("id_additional_totp_details");
-      if (additional_details.hidden){
-        additional_details.hidden = false;
-      } else {
-        additional_details.hidden = true;
+      function toggleAdditionalDetails(){
+        var additional_details = document.getElementById("id_additional_totp_details");
+        if (additional_details.hidden){
+          additional_details.hidden = false;
+        } else {
+          additional_details.hidden = true;
+        }
       }
-    }
     </script>
 
     {% include "horizon/common/_form_fields.html" %}
