@@ -42,4 +42,4 @@ list, also place this in your config (customization_module must also be set).
 
 .. code-block:: python
 
-    MFA_ENABLED_IN_USER_LIST = True
+    SHOW_MFA_ENABLED_IN_USER_LIST = True
