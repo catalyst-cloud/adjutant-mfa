@@ -9,14 +9,20 @@ adjutant into.
 
 Edit the ``conf.yaml`` file to enable this plugin.
 
-To ``INSTALLED_APPS`` add:
+To ``ADDITIONAL_APPS`` add:
 
 .. code-block:: yaml
 
     - mfa_actions
     - mfa_views
 
-In ``ACTIVE_TASKVIEWS`` replace ``UserList`` with ``UserListMFA``.
+In ``ACTIVE_TASKVIEWS`` replace ``UserList`` with ``UserListMFA``, and add
+``EditMFA``.
+
+.. code-block:: yaml
+
+    - UserListMFA
+    - EditMFA
 
 And to ``TASK_SETTINGS`` add:
 
