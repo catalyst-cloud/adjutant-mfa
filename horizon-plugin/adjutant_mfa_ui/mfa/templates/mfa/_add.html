@@ -50,11 +50,11 @@
   </div>
   <div class="col-sm-6">
     <h3>{% trans "Description:" %}</h3>
-    <p>{% trans "Multifactor authentication protects your account by ensuring that any attacker will need access to more than just your password."%} </p>
-    <p>{% trans "Scan the QR code to your left with an application such as Google Authenticator or Authy. Then type in the generated passcode to confirm the addition of 2 Factor Authenitcation to your account."%} </p>
-    <p>{% trans "You will not be able to review this QR code or login without two factor authentication after this has been submitted. However, this protection can be removed at from this page by confirming your current passcode." %}</p>
+    <p>{% trans "Multi-Factor Authentication (MFA) protects your account by ensuring that any attacker will need access to more than just your password."%} </p>
+    <p>{% trans "To enable MFA on your account, scan the QR code to your left with an application such as Google Authenticator or Authy, then type in the generated passcode to confirm the change."%} </p>
+    <p>{% trans "Note: you will not be able to login to the Dashboard, use the APIs nor review this QR code without MFA once this has been enabled. However, this protection can be removed by confirming your current passcode on this page." %}</p>
 
-    <p>{% trans "A new openrc file must be downloaded to ensure that you will not have to reauthenticate each time your totp passcode changes. The openrc file will generate a token that allows you to stay authenticated." %}</p>
+    <p>{% trans "A new OpenRC file must be downloaded to ensure that you will not have to reauthenticate each time your TOTP passcode changes. The OpenRC file will generate a token that allows you to stay authenticated while using the APIs." %}</p>
 
   </div>
 </div>
