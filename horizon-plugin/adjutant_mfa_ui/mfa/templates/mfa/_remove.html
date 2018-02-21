@@ -3,11 +3,11 @@
 
 {% block modal-body-right %}
   <h3>{% trans "Description:" %}</h3>
-  <p>{% trans "Enter in the current code from yout totp application to confirm the removal of MFA from your account. " %}</p>
+  <p>{% trans "Enter the current code from your TOTP application to confirm the removal of MFA from your account. " %}</p>
 
   {% url 'horizon:settings:mfa:openrc' as rc_url %}
   {% blocktrans %}
-  <p> If you are wishing to remove MFA due to issues using the command line tools ensure that you have downloaded and are using the MFA enabled OpenStack RC file available <a href="{{ rc_url }}">here</a>.
+  <p> If you are wishing to remove MFA due to issues using the command line tools, ensure that you have downloaded and are using the MFA enabled OpenRC file available <a href="{{ rc_url }}">here</a>.
     This will simplify the process of using the command line tools with Multi Factor Authentication.</p>
   {% endblocktrans %}
 
