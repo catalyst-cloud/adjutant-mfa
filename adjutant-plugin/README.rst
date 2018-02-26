@@ -31,7 +31,8 @@ And to ``TASK_SETTINGS`` add:
     edit_mfa:
         cloud_name: OpenStack
         duplicate_policy: cancel
-        token: null
+        emails:
+            token: null
 
 ``cloud_name`` will show up on the TOTP provisioning uris, and in the user's
 authenticator app.
