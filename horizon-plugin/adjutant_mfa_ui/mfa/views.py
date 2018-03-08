@@ -37,13 +37,12 @@ def update_mfa_router(request, *args, **kwargs):
     """Routes requests to the correct view, based on submission parameters."""
     try:
         user_has_mfa = api.adjutant.user_has_mfa(request)
+        if user_has_mfa:
+            return RemoveMFAView.as_view()(request, *args, **kwargs)
+        else:
+            return AddMFAView.as_view()(request, *args, **kwargs)
     except Exception:
         return ErrorMFAView.as_view()(request, *args, **kwargs)
-
-    if user_has_mfa:
-        return RemoveMFAView.as_view()(request, *args, **kwargs)
-    else:
-        return AddMFAView.as_view()(request, *args, **kwargs)
 
 
 def download_rc_file_mfa(request):

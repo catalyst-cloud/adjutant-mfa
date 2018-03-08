@@ -12,8 +12,18 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from rest_framework.response import Response
+import base64
+import json
+import six
 
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.hashes import SHA1
+from cryptography.hazmat.primitives.twofactor.totp import TOTP
+
+from django.conf import settings
+from django.utils import timezone
+
+from rest_framework.response import Response
 
 from adjutant.api.models import Token
 from adjutant.api import utils
@@ -21,16 +31,6 @@ from adjutant.api.v1.openstack import UserList
 from adjutant.api.v1.tasks import TaskView
 from adjutant.api.v1.utils import add_task_id_for_roles
 from adjutant.common import user_store
-
-from django.utils import timezone
-
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives.hashes import SHA1
-from cryptography.hazmat.primitives.twofactor.totp import TOTP
-
-import base64
-from django.conf import settings
-import six
 
 
 class EditMFA(TaskView):
@@ -84,8 +84,8 @@ class EditMFA(TaskView):
         creds = id_manager.list_credentials(user_id, cred_type)
 
         # NOTE(amelia): There will only be one as the action checks for
-        #               other cases and makrs them invalid
-        secret = creds[0].blob
+        #               other cases and marks them invalid
+        secret = json.loads(creds[0].blob)['secret']
 
         user_name = id_manager.get_user(user_id).name
 

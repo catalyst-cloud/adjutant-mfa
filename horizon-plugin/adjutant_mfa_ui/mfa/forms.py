@@ -13,6 +13,7 @@
 #    under the License.
 
 from django.conf import settings
+from django.core.urlresolvers import reverse
 from django.forms import ValidationError  # noqa
 from django import http
 from django.utils.translation import ugettext_lazy as _
@@ -58,14 +59,13 @@ class AddMFAForm(forms.SelfHandlingForm):
                     messages.error(request,
                                    _('Unable to setup MFA. Your passcode '
                                      'may be incorrect.'))
-                    return False
             except Exception:
                 exceptions.handle(request,
                                   _('Unable to setup MFA.'))
-                return False
         else:
             messages.error(request, _('MFA already setup for this account.'))
-            return False
+
+        return http.HttpResponseRedirect(reverse("horizon:settings:mfa:index"))
 
 
 class RemoveMFAForm(forms.SelfHandlingForm):
@@ -94,11 +94,10 @@ class RemoveMFAForm(forms.SelfHandlingForm):
                 else:
                     messages.error(request,
                                    _('Unable to remove MFA.'))
-                    return False
             except Exception:
                 exceptions.handle(request,
                                   _('Unable to remove MFA.'))
-                return False
         else:
             messages.error(request, _('MFA not setup on this account.'))
-            return False
+
+        return http.HttpResponseRedirect(reverse("horizon:settings:mfa:index"))
