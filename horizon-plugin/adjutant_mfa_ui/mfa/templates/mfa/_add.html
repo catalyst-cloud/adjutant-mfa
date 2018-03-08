@@ -5,7 +5,7 @@
 <div class="row">
   <div class="col-sm-6">
     <!-- Printing out qr code & explanation here -->
-    <label class="control-label">Your MFA Credential Barcode: </label>
+    <label class="control-label">Your MFA Credential QR Code: </label>
     {% if form.provisioning_url.help_text %}
       <span class="help-icon" data-toggle="tooltip" data-placement="top" title="{{ form.provisioning_url.help_text|safe }}"><span class="fa fa-question-circle"></span></span>
     {% endif %}
@@ -54,7 +54,7 @@
     <p>{% trans "To enable MFA on your account, scan the QR code to your left with an application such as Google Authenticator or Authy, then type in the generated passcode to confirm the change."%} </p>
     <p>{% trans "Note: you will not be able to login to the Dashboard, use the APIs nor review this QR code without MFA once this has been enabled. However, this protection can be removed by confirming your current passcode on this page." %}</p>
 
-    <p>{% trans "A new OpenRC file must be downloaded to ensure that you will not have to reauthenticate each time your TOTP passcode changes. The OpenRC file will generate a token that allows you to stay authenticated while using the APIs." %}</p>
+    <p>{% trans "For using the OpenStack Client, a new OpenRC file must be downloaded to ensure that you will not have to reauthenticate each time your TOTP passcode changes. The OpenRC file uses the OpenStack Client to generate a token that allows you to stay authenticated while using the APIs." %}</p>
 
   </div>
 </div>

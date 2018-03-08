@@ -12,6 +12,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import base64
+from datetime import timedelta
+import json
+import os
+
+from django.utils import timezone
+from django.utils.dateparse import parse_datetime
+
 from adjutant.common import user_store
 from adjutant.actions.v1.base import (
     UserIdAction, UserMixin, ProjectMixin)
@@ -19,9 +27,6 @@ from adjutant.actions.v1.models import register_action_class
 
 from mfa_actions.utils import generate_totp_passcode
 from mfa_actions import serializers
-
-import base64
-import os
 
 
 class EditMFAAction(UserIdAction, ProjectMixin, UserMixin):
@@ -33,6 +38,8 @@ class EditMFAAction(UserIdAction, ProjectMixin, UserMixin):
         'user_id',
         'delete'
     ]
+
+    cred_expiry = 15  # in minutes
 
     def _validate_target_user(self):
         # Get target user
@@ -64,13 +71,38 @@ class EditMFAAction(UserIdAction, ProjectMixin, UserMixin):
 
         if self.valid and not self.delete:
             id_manager = user_store.IdentityManager()
-            id_manager.clear_credential_type(self.user_id, 'totp-draft')
+            creds = id_manager.list_credentials(self.user_id, 'totp-draft')
 
-            # Generate a new secret
-            secret = base64.b32encode(os.urandom(20)).decode('utf-8')
-            id_manager.add_credential(self.user_id, 'totp-draft', secret)
+            expiry_time = timezone.now() - timedelta(
+                minutes=int(
+                    self.settings.get('cred_expiry', self.cred_expiry)))
 
-            self.add_note("Added new 'totp-draft' secret key.")
+            valid_cred = None
+            for cred in creds:
+                if valid_cred:
+                    id_manager.delete_credential(cred)
+                    continue
+                try:
+                    cred_data = json.loads(cred.blob)
+                    cred_time = parse_datetime(cred_data['created'])
+                    if cred_time >= expiry_time:
+                        valid_cred = True
+                except (ValueError, KeyError):
+                    id_manager.delete_credential(cred)
+
+            if not valid_cred:
+                # Generate a new secret
+                secret = base64.b32encode(os.urandom(20)).decode('utf-8')
+                blob = {
+                    'secret': secret,
+                    'created': str(timezone.now()),
+                }
+                id_manager.add_credential(
+                    self.user_id, 'totp-draft', json.dumps(blob))
+
+                self.add_note("Added new 'totp-draft' secret key.")
+            else:
+                self.add_note("There is already a valid 'totp-draft' key.")
 
     def _post_approve(self):
         self._validate()
@@ -86,13 +118,13 @@ class EditMFAAction(UserIdAction, ProjectMixin, UserMixin):
 
         id_manager = user_store.IdentityManager()
         if self.delete:
-            secret = self.get_credential_blob()
+            secret = self.get_credential_secret()
 
             if not secret:
                 # TOTP already removed
                 return
 
-            if self.validate_passcode(token_data.get('passcode')):
+            if self.validate_passcode(secret, token_data.get('passcode')):
                 id_manager.clear_credential_type(self.user_id, 'totp')
                 self.add_note("TOTP secret key removed.")
                 self.action.valid = True
@@ -102,14 +134,14 @@ class EditMFAAction(UserIdAction, ProjectMixin, UserMixin):
 
                 return {'errors': 'Invalid TOTP passcode'}
         else:
-            secret = self.get_credential_blob()
+            secret = self.get_credential_secret()
 
             if not secret:
                 self.action.valid = False
                 self.action.save()
                 return {'errors': 'TOTP Secret Removed'}
 
-            if self.validate_passcode(token_data.get('passcode')):
+            if self.validate_passcode(secret, token_data.get('passcode')):
                 id_manager.clear_credential_type(self.user_id, 'totp-draft')
                 id_manager.add_credential(self.user_id, 'totp', secret)
 
@@ -121,7 +153,7 @@ class EditMFAAction(UserIdAction, ProjectMixin, UserMixin):
                 self.action.valid = False
                 return {'errors': 'Invalid TOTP passcode'}
 
-    def get_credential_blob(self):
+    def get_credential_secret(self):
         id_manager = user_store.IdentityManager()
         cred_type = 'totp' if self.delete else 'totp-draft'
         credentials = id_manager.list_credentials(self.user_id, cred_type)
@@ -133,11 +165,16 @@ class EditMFAAction(UserIdAction, ProjectMixin, UserMixin):
             self.add_note("More than one credential found.")
             return False
 
-        return credentials[0].blob
+        if cred_type == 'totp':
+            return credentials[0].blob
 
-    def validate_passcode(self, passcode):
-        secret = self.get_credential_blob()
+        try:
+            return json.loads(credentials[0].blob)['secret']
+        except (TypeError, ValueError, KeyError):
+            self.add_note("Issues parsing credential.")
+            return False
 
+    def validate_passcode(self, secret, passcode):
         if not passcode or not secret:
             return False
 
