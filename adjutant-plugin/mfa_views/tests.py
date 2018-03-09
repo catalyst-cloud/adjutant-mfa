@@ -14,6 +14,7 @@
 
 import mock
 import base64
+import json
 import os
 from six.moves.urllib import parse as urlparse
 
@@ -104,7 +105,8 @@ class MfaAPITests(APITestCase):
 
         manager = FakeManager()
         creds = manager.list_credentials(user.id, 'totp-draft')
-        self.assertEqual(secret, creds[0].blob)
+        server_secret = json.loads(creds[0].blob)['secret']
+        self.assertEqual(secret, server_secret)
         self.assertNotEqual(token, None)
 
         code = generate_totp_passcode(secret)

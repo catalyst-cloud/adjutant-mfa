@@ -13,6 +13,7 @@
 #    under the License.
 
 import base64
+import json
 import mock
 import os
 
@@ -71,7 +72,7 @@ class MFAActionTests(AdjutantTestCase):
 
         self.assertEqual(len(user_cred(user.id, 'totp-draft')), 1)
 
-        secret = user_cred(user.id, 'totp-draft')[0].blob
+        secret = json.loads(user_cred(user.id, 'totp-draft')[0].blob)['secret']
 
         passcode = generate_totp_passcode(secret)
         token_data = {'passcode': passcode}
@@ -121,7 +122,7 @@ class MFAActionTests(AdjutantTestCase):
             user_id=user.id, cred_type='totp-draft')
         self.assertEqual(len(user_draft), 1)
 
-        secret = user_draft[0].blob
+        secret = json.loads(user_draft[0].blob)['secret']
         manager.clear_credential_type(user_id=user.id, cred_type='totp-draft')
 
         passcode = generate_totp_passcode(secret)

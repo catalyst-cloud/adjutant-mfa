@@ -1,1 +1,4 @@
+-e git://github.com/openstack/adjutant.git#egg=python-adjutant
 mock>=2.0.0
+flake8>=3.0.4
+coverage>=4.4.1
