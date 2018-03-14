@@ -6,8 +6,8 @@
   {{ block.super }}
   <div class="form-group ">
     <div class="themable-checkbox">
-      <input type="checkbox" name="mfa_enabled" id="id_mfa_enabled" onclick="togglePasscodeField();"/>
-      <label for="id_mfa_enabled">
+      <input type="checkbox" name="mfa_enabled" id="id_mfa_enabled_toggle"/>
+      <label for="id_mfa_enabled_toggle">
          <span class="control-label">MFA Enabled</span>
       </label>
     </div>
@@ -22,32 +22,4 @@
     </div>
   </div>
 
-  <script>
-      function togglePasscodeField(){
-        var checked = document.getElementById('id_mfa_enabled').checked;
-        if (checked){
-          document.getElementById('id_passcode_div').hidden = false;
-        }else{
-          document.getElementById('id_passcode_div').hidden = true;
-        }
-      }
-
-      function processForm(e) {
-        var checked = document.getElementById('id_mfa_enabled').checked;
-        if (checked) {
-          // Append the TOTP passcode to the password
-          var totpPasscode = document.getElementById('id_passcode').value;
-          document.getElementById('id_password').value += totpPasscode;
-        }
-
-      }
-
-      var form = document.forms[0]; // Form ID is not set, this functions on the
-                                    // assumption that there is not multiple forms
-      if (form.attachEvent) {
-          form.attachEvent("submit", processForm);
-      } else {
-          form.addEventListener("submit", processForm);
-      }
-  </script>
 {% endblock %}

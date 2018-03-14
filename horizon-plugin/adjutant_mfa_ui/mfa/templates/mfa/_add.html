@@ -11,32 +11,11 @@
     {% endif %}
 
     <div class="center-block text-center">
-      <div id="qrcode" class="img-thumbnail" width=200></div>
+      <div id="mfa-qrcode" class="img-thumbnail" width=200 data-provisioning-url="{{ form.provisioning_url.value|safe }}"></div>
     </div>
-    <script src='{{ STATIC_URL }}/dashboard/settings/adjutant-ui/mfa/qrcode/qrcode.min.js' type='text/javascript' charset='utf-8'></script>
-
-    <script type="text/javascript">
-      new QRCode(document.getElementById("qrcode"), {
-      	text: "{{ form.provisioning_url.value|safe }}",
-      	width: 200,
-      	height: 200,
-      	correctLevel : QRCode.CorrectLevel.H
-      });
-
-      var provisioning_url = "{{ form.provisioning_url.value|safe }}";
-
-      function toggleAdditionalDetails(){
-        var additional_details = document.getElementById("id_additional_totp_details");
-        if (additional_details.hidden){
-          additional_details.hidden = false;
-        } else {
-          additional_details.hidden = true;
-        }
-      }
-    </script>
 
     {% include "horizon/common/_form_fields.html" %}
-    <a href="#" id="id_additional_details_toggle" onclick="toggleAdditionalDetails()"  title="If you cannot scan the QR code click here for the full details to enter into your MFA application.">View All Details</a>
+    <a href="#" id="id_additional_details_toggle" title="If you cannot scan the QR code click here for the full details to enter into your MFA application.">View All Details</a>
     <span class="help-icon" data-toggle="tooltip" data-placement="top" title="If you cannot scan the QR code click here for the full details to enter into your MFA application."><span class="fa fa-question-circle"></span></span>
     <dl class="dl-horizontal" id="id_additional_totp_details" hidden="true">
         <dt>Secret:</dt> <dd>{{ form.details.value.secret.0 }}</dd>
