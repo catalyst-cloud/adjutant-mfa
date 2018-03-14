@@ -87,6 +87,8 @@ class EditMFAAction(UserIdAction, ProjectMixin, UserMixin):
                     cred_time = parse_datetime(cred_data['created'])
                     if cred_time >= expiry_time:
                         valid_cred = True
+                    else:
+                        id_manager.delete_credential(cred)
                 except (ValueError, KeyError):
                     id_manager.delete_credential(cred)
 
@@ -163,6 +165,8 @@ class EditMFAAction(UserIdAction, ProjectMixin, UserMixin):
             return False
         elif len(credentials) > 1:
             self.add_note("More than one credential found.")
+            if cred_type == 'totp-draft':
+                id_manager.clear_credential_type(self.user_id, 'totp-draft')
             return False
 
         if cred_type == 'totp':
