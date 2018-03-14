@@ -1,7 +1,5 @@
 {% load shellfilter %}#!/usr/bin/env bash
 
-# TESTING TESTING 123
-
 # To use an OpenStack cloud you need to authenticate against the Identity
 # service named keystone, which returns a **Token** and **Service Catalog**.
 # The catalog contains the endpoints for all services the user/tenant has
@@ -23,8 +21,6 @@ export OS_USER_DOMAIN_NAME="{{ user_domain_name|shellfilter }}"
 if [ -z "$OS_USER_DOMAIN_NAME" ]; then unset OS_USER_DOMAIN_NAME; fi
 export OS_PROJECT_DOMAIN_ID="{{ project_domain_id|shellfilter }}"
 if [ -z "$OS_PROJECT_DOMAIN_ID" ]; then unset OS_PROJECT_DOMAIN_ID; fi
-
-unset OS_USER_DOMAIN_NAME
 
 # unset v2.0 items in case set
 unset OS_TENANT_ID
@@ -50,26 +46,37 @@ read -sr OS_PASSWORD_INPUT
 echo "Please enter your OpenStack MFA passcode (leave blank if not enabled): "
 read OS_PASSCODE_INPUT
 
+# make the passcode appended password
 export OS_PASSWORD=$OS_PASSWORD_INPUT$OS_PASSCODE_INPUT
 
 if [ -z "$OS_PASSCODE_INPUT" ]; then
     echo "If you wish to enable MFA please go to the settings tab on the dashboard."
 fi
+# clear the password/passcode values so they aren't in memory
+unset OS_PASSWORD_INPUT
+unset OS_PASSCODE_INPUT
 
 # unset token auth variables just in case
 unset OS_AUTH_TYPE
 unset OS_TOKEN
+unset OS_AUTH_TOKEN
 
 # generate token to use so that you will stay authenticated even when
 # your TOTP password expires
 export OS_TOKEN=$(openstack token issue -f value -c id)
 
 if [ -z "$OS_TOKEN" ]; then
-    echo "FAILED: OS_TOKEN was not setup"
+    echo "FAILED: OS_TOKEN was not setup, your passcode may have been incorrect."
 else
+    # unset all values not needed for token auth
+    unset OS_USER_DOMAIN_NAME
+    unset OS_USERNAME
+    unset OS_PROJECT_DOMAIN_ID
+    unset OS_PROJECT_NAME
     export OS_AUTH_TYPE="token"
-    echo "Your OS_TOKEN has been setup"
+    export OS_AUTH_TOKEN=$OS_TOKEN
+    echo "OS_TOKEN and OS_AUTH_TOKEN have been set"
 fi
 
-# clear password so that auth will work with the token instead
+# clear password
 unset OS_PASSWORD
