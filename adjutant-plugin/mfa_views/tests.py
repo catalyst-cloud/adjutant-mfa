@@ -21,6 +21,8 @@ from six.moves.urllib import parse as urlparse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from adjutant.api.models import Task
+
 from adjutant.common.tests import fake_clients
 from adjutant.common.tests.fake_clients import (
     FakeManager, setup_identity_cache)
@@ -99,6 +101,103 @@ class MfaAPITests(APITestCase):
         token = response.data.get('token_id')
 
         self.assertNotEqual(provisoning_uri, None)
+
+        secret = urlparse.parse_qs(
+            urlparse.urlsplit(provisoning_uri).query).get('secret')[0]
+
+        manager = FakeManager()
+        creds = manager.list_credentials(user.id, 'totp-draft')
+        server_secret = json.loads(creds[0].blob)['secret']
+        self.assertEqual(secret, server_secret)
+        self.assertNotEqual(token, None)
+
+        code = generate_totp_passcode(secret)
+        url = "/v1/tokens/" + token
+        data = {'passcode': code}
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_remove_mfa_existing(self):
+        """
+        Ensure the reset user workflow goes as expected for existing tasks.
+        Create task + create token, get existing task, submit token.
+        """
+
+        user = fake_clients.FakeUser(
+            name="test@example.com", password="test_password",
+            email="test@example.com")
+        cred = fake_clients.FakeCredential(
+            user_id=user.id, cred_type='totp',
+            blob=base64.b32encode(os.urandom(20)).decode('utf-8'))
+
+        setup_identity_cache(users=[user], credentials=[cred])
+
+        headers = {
+            'project_name': "test_project",
+            'project_id': "test_project_id",
+            'roles': "_member_",
+            'username': "test@example.com",
+            'user_id': user.id,
+            'authenticated': True
+        }
+        url = "/v1/openstack/edit-mfa"
+        data = {}
+        response = self.client.delete(url, data,
+                                      format='json', headers=headers)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        token = response.data.get('token_id')
+        self.assertNotEqual(token, None)
+        self.assertEqual(Task.objects.count(), 1)
+
+        response = self.client.delete(url, data,
+                                      format='json', headers=headers)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        token2 = response.data.get('token_id')
+        self.assertEqual(token, token2)
+        self.assertEqual(Task.objects.count(), 1)
+
+        code = generate_totp_passcode(cred.blob)
+
+        url = "/v1/tokens/" + token
+        data = {'passcode': code}
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_add_mfa_existing(self):
+        """
+        Attempts to add mfa to a user account with an existing task
+        """
+
+        user = fake_clients.FakeUser(
+            name="test@example.com", password="test_password",
+            email="test@example.com")
+
+        setup_identity_cache(users=[user])
+
+        headers = {
+            'project_name': "test_project",
+            'project_id': "test_project_id",
+            'roles': "_member_",
+            'username': "test@example.com",
+            'user_id': user.id,
+            'authenticated': True
+        }
+        url = "/v1/openstack/edit-mfa"
+
+        response = self.client.post(url, {}, format='json', headers=headers)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        provisoning_uri = response.data.get('otpauth')
+        token = response.data.get('token_id')
+        self.assertNotEqual(provisoning_uri, None)
+        self.assertEqual(Task.objects.count(), 1)
+
+        response = self.client.post(url, {}, format='json', headers=headers)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        provisoning_uri2 = response.data.get('otpauth')
+        token2 = response.data.get('token_id')
+        self.assertEqual(token, token2)
+        self.assertEqual(provisoning_uri, provisoning_uri2)
+        self.assertEqual(Task.objects.count(), 1)
 
         secret = urlparse.parse_qs(
             urlparse.urlsplit(provisoning_uri).query).get('secret')[0]
