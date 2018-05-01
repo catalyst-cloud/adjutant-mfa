@@ -13,6 +13,7 @@
 #    under the License.
 
 import base64
+from datetime import timedelta
 import json
 import six
 
@@ -25,7 +26,7 @@ from django.utils import timezone
 
 from rest_framework.response import Response
 
-from adjutant.api.models import Token
+from adjutant.api.models import Token, Task
 from adjutant.api import utils
 from adjutant.api.v1.openstack import UserList
 from adjutant.api.v1.tasks import TaskView
@@ -43,6 +44,8 @@ class EditMFA(TaskView):
 
     default_actions = ['EditMFAAction', ]
 
+    cred_expiry = 15
+
     @utils.authenticated
     def get(self, request):
         user_id = request.keystone_user['user_id']
@@ -53,11 +56,52 @@ class EditMFA(TaskView):
         return Response({'username': user.name,
                          'has_mfa': has_mfa})
 
+    def _reuse_existing_task(self, request, otpauth=True):
+        class_conf = settings.TASK_SETTINGS.get(
+            self.task_type, settings.DEFAULT_TASK_SETTINGS)
+
+        expiry_time = timezone.now() - timedelta(
+            minutes=int(
+                class_conf.get('cred_expiry', self.cred_expiry)))
+
+        project_mfa_tasks = Task.objects.filter(
+            project_id=request.keystone_user['project_id'],
+            keystone_user__icontains=request.keystone_user['user_id'],
+            task_type=self.task_type,
+            created_on__gt=expiry_time,
+            completed=0,
+            cancelled=0)
+
+        if project_mfa_tasks.count() == 1:
+            task = project_mfa_tasks[0]
+            task_data = {}
+            for action in task.actions:
+                task_data.update(action.action_data)
+
+            if task_data['delete'] == request.data['delete']:
+                tokens = Token.objects.filter(task=task.uuid)
+                if tokens.count() == 1:
+                    token = tokens[0]
+                    response_dict = {
+                        'notes': 'Reusing existing task.',
+                        'token_id': token.token}
+                    if otpauth:
+                        response_dict['otpauth'] = self.get_provisioning_uri(
+                            request.data['user_id'])
+                    return Response(response_dict, status=200)
+        return None
+
     @utils.authenticated
     def post(self, request, format=None):
         """ Add MFA to an account """
         request.data['user_id'] = request.keystone_user['user_id']
         request.data['delete'] = False
+
+        existing_task = self._reuse_existing_task(request)
+        if existing_task is not None:
+            self.logger.info(
+                "(%s) - Existing EditMFA request." % timezone.now())
+            return existing_task
 
         self.logger.info("(%s) - New EditMFA request." % timezone.now())
         processed, status = self.process_actions(request)
@@ -107,6 +151,12 @@ class EditMFA(TaskView):
         """ Remove MFA from account """
         request.data['user_id'] = request.keystone_user['user_id']
         request.data['delete'] = True
+
+        existing_task = self._reuse_existing_task(request, otpauth=False)
+        if existing_task is not None:
+            self.logger.info(
+                "(%s) - Existing EditMFA request." % timezone.now())
+            return existing_task
 
         self.logger.info("(%s) - New EditMFA request." % timezone.now())
         processed, status = self.process_actions(request)

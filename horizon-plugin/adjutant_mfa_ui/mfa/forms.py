@@ -65,7 +65,7 @@ class AddMFAForm(forms.SelfHandlingForm):
         else:
             messages.error(request, _('MFA already setup for this account.'))
 
-        return False
+        return http.HttpResponseRedirect(reverse("horizon:settings:mfa:index"))
 
 
 class RemoveMFAForm(forms.SelfHandlingForm):
