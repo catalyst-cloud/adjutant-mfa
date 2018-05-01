@@ -52,7 +52,8 @@ Then in the auth section of the keystone.conf file add:
 
 .. code-block::
 
-  password = keystone_mfa.queens.password_totp.PasswordTOTP
+  [auth]
+  password = queens.password_totp
 
 Then restart the keystone server.
 

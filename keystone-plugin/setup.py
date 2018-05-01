@@ -36,4 +36,12 @@ setup(
     ],
     keywords='keystone auth mfa totp openstack',
     packages=find_packages(),
+    entry_points={
+        'keystone.auth.password': [
+            'mitaka.password_totp = keystone_mfa.mitaka.password_totp:PasswordTOTP',
+            'newton.password_totp = keystone_mfa.newton.password_totp:PasswordTOTP',
+            'ocata.password_totp = keystone_mfa.ocata.password_totp:PasswordTOTP',
+            'pike.password_totp = keystone_mfa.pike.password_totp:PasswordTOTP',
+            'queens.password_totp = keystone_mfa.queens.password_totp:PasswordTOTP',
+        ]}
 )
