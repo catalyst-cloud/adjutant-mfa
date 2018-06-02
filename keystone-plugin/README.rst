@@ -41,11 +41,8 @@ To install the plugin into the current python environment:
 
 .. code-block::
 
-  python setup.py install
-
-  or (if this ever gets published to pypi)
-
-  pip install keystone-adjutant-mfa
+  git clone https://github.com/catalyst-cloud/adjutant-mfa.git
+  pip install adjutant-mfa/keystone-plugin/
 
 
 Then in the auth section of the keystone.conf file add:
