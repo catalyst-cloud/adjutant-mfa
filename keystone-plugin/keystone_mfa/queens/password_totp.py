@@ -32,6 +32,7 @@ from oslo_log import log
 from keystone.auth import plugins
 from keystone.auth.plugins import base
 from keystone.auth.plugins import totp
+from keystone.common import provider_api
 from keystone import exception
 from keystone.i18n import _
 
@@ -39,6 +40,7 @@ from keystone.i18n import _
 METHOD_NAME = 'password'
 
 LOG = log.getLogger(__name__)
+PROVIDERS = provider_api.ProviderAPIs
 
 PASSCODE_LENGTH = 6
 
@@ -52,7 +54,7 @@ class PasswordTOTP(base.AuthMethodHandler):
         user_info = plugins.UserAuthInfo.create(auth_payload, METHOD_NAME)
 
         # First we check if the given user_id has totp credentials
-        credentials = self.credential_api.list_credentials_for_user(
+        credentials = PROVIDERS.credential_api.list_credentials_for_user(
             user_info.user_id, type='totp')
 
         if credentials:
@@ -66,7 +68,7 @@ class PasswordTOTP(base.AuthMethodHandler):
             valid_passcode = True
 
         try:
-            self.identity_api.authenticate(
+            PROVIDERS.identity_api.authenticate(
                 request,
                 user_id=user_info.user_id,
                 password=user_password)
