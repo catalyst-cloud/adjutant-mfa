@@ -43,5 +43,6 @@ setup(
             'ocata.password_totp = keystone_mfa.ocata.password_totp:PasswordTOTP',
             'pike.password_totp = keystone_mfa.pike.password_totp:PasswordTOTP',
             'queens.password_totp = keystone_mfa.queens.password_totp:PasswordTOTP',
+            'rocky.password_totp = keystone_mfa.rocky.password_totp:PasswordTOTP',
         ]}
 )

@@ -58,11 +58,17 @@ Then in the auth section of the keystone.conf file add:
 Then restart the keystone server.
 
 There is a version of the plugin going back as far as Mitaka, with the Ocata
-version also working for Pike.
+version also working for Pike, and the Queens version (currently) working for
+Rocky.
 
 
 Disabling Keystone v2 for MFA enabled users
 -------------------------------------------
+
+**NOTE: This part of the readme is is talking about Keystone code before
+Ocata, and Ocata onwards is quite different for the V2 controller code, so
+while the essence of this section is still valid, you will need to find Ocata+
+appropriate variants yourself.**
 
 If you have Keystone v2 enabled, then a user with MFA enabled can easily bypass
 the MFA and authenticate with Keystone v2. V2 does not support MFA, nor will it
