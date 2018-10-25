@@ -5,12 +5,10 @@
   {# Add in additional login field and JS required to allow users to place their passcode in and append it to the password #}
   {{ block.super }}
   <div class="form-group ">
-    <div class="themable-checkbox">
-      <input type="checkbox" name="mfa_enabled" id="id_mfa_enabled" onclick="togglePasscodeField();"/>
+      <input type="checkbox" name="mfa_enabled" tabindex="3" id="id_mfa_enabled" onclick="togglePasscodeField();"/>
       <label for="id_mfa_enabled">
          <span class="control-label">MFA Enabled</span>
       </label>
-    </div>
   </div>
 
   <div class="form-group " hidden='true' id='id_passcode_div'>
@@ -19,7 +17,7 @@
       <span class="hz-icon-required fa fa-asterisk"></span>
     <div class=" ">
           <input type="text" name="totp_passcode" data-switch-on="mfa_enabled" data-source-manual="TOTP Passcode" class="switched form-control" id="id_passcode" />
-    </div>
+        </div>
   </div>
 
   <script>
@@ -27,8 +25,10 @@
         var checked = document.getElementById('id_mfa_enabled').checked;
         if (checked){
           document.getElementById('id_passcode_div').hidden = false;
+          localStorage.setItem('mfa_checked', true);
         }else{
           document.getElementById('id_passcode_div').hidden = true;
+          localStorage.removeItem('mfa_checked');
         }
       }
 
@@ -49,5 +49,14 @@
       } else {
           form.addEventListener("submit", processForm);
       }
+
+      document.addEventListener('DOMContentLoaded', function() {
+        var mfa_checked = localStorage.getItem('mfa_checked');
+        if (mfa_checked) {
+          document.getElementById('id_mfa_enabled').checked = true;
+          togglePasscodeField();
+        }
+      }, false);
+
   </script>
 {% endblock %}
