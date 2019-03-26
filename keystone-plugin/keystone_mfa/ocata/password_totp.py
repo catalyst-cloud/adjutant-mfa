@@ -31,17 +31,15 @@ from oslo_log import log
 
 from keystone.auth import plugins
 from keystone.auth.plugins import base
-from keystone.auth.plugins import totp
 from keystone.common import dependency
 from keystone import exception
 from keystone.i18n import _
 
+from keystone_mfa import utils
 
 METHOD_NAME = 'password'
 
 LOG = log.getLogger(__name__)
-
-PASSCODE_LENGTH = 6
 
 
 @dependency.requires('credential_api', 'identity_api')
@@ -59,8 +57,8 @@ class PasswordTOTP(base.AuthMethodHandler):
 
         if credentials:
             # If the user has credentials, strip passcode from password
-            user_password = user_info.password[:-PASSCODE_LENGTH]
-            auth_passcode = user_info.password[-PASSCODE_LENGTH:]
+            user_password = user_info.password[:-utils.PASSCODE_LENGTH]
+            auth_passcode = user_info.password[-utils.PASSCODE_LENGTH:]
             valid_passcode = False
         else:
             # If the user has no TOTP credentials, skip TOTP.
@@ -79,9 +77,9 @@ class PasswordTOTP(base.AuthMethodHandler):
 
         for credential in credentials:
             try:
-                generated_passcode = totp._generate_totp_passcode(
+                generated_passcodes = utils._generate_totp_passcodes(
                     credential['blob'])
-                if auth_passcode == generated_passcode:
+                if auth_passcode in generated_passcodes:
                     valid_passcode = True
                     break
             except (ValueError, KeyError):
