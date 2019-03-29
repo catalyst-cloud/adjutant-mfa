@@ -61,9 +61,66 @@ unset OS_AUTH_TYPE
 unset OS_TOKEN
 unset OS_AUTH_TOKEN
 
+# check which methods are currently available to get auth token from keystone
+if hash openstack 2>/dev/null; then
+    COMMAND="openstack"
+elif hash wget 2>/dev/null; then
+    COMMAND="wget"
+elif hash curl 2>/dev/null; then
+    COMMAND='curl'
+fi
+
+get_cloud_token (){
+
+  if [ "$COMMAND" == "openstack" ]; then
+    export OS_TOKEN=$(openstack token issue -f value -c id)
+  elif [ $COMMAND == "wget" ]; then
+    export OS_TOKEN=`wget -S -q -O - --header="Content-Type: application/json" --post-data '
+    { "auth": {
+        "identity": {
+            "methods": ["password"],
+            "password": {
+              "user": {
+                  "name": "'$OS_USERNAME'",
+                  "domain": { "name": "'$OS_USER_DOMAIN_NAME'" },
+                  "password": "'$OS_PASSWORD'"
+              }
+            }
+          },
+          "scope": {
+              "project": {
+                  "id": "'$OS_PROJECT_ID'"
+              }
+          }
+        }
+    }' $OS_AUTH_URL/auth/tokens 2>&1 | grep X-Subject-Token | awk '{print $2}'| tr '\r' ' '`
+  elif [ $COMMAND == "curl" ]; then
+    export OS_TOKEN=`curl -i -H "Content-Type: application/json" -d '
+    { "auth": {
+        "identity": {
+            "methods": ["password"],
+            "password": {
+              "user": {
+                  "name": "'$OS_USERNAME'",
+                  "domain": { "name": "'$OS_USER_DOMAIN_NAME'" },
+                  "password": "'$OS_PASSWORD'"
+              }
+            }
+          },
+          "scope": {
+              "project": {
+                  "id": "'$OS_PROJECT_ID'"
+              }
+          }
+        }
+    }' $OS_AUTH_URL/auth/tokens 2>&1 | grep X-Subject-Token | awk '{print $2}'| tr '\r' ' '| sed 's/[[:space:]]*$//'`
+  fi
+
+}
+
 # generate token to use so that you will stay authenticated even when
 # your TOTP password expires
-export OS_TOKEN=$(openstack token issue -f value -c id)
+get_cloud_token
 
 if [ -z "$OS_TOKEN" ]; then
     echo "FAILED: OS_TOKEN was not setup, your passcode may have been incorrect."
